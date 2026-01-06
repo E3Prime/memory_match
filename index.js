@@ -5,7 +5,6 @@ const sleep = async (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function initialize() {
   const memoryMatchElem = /** @type {HTMLElement} */ (document.getElementById('memoryMatch'));
-  const resetBtn = /** @type {HTMLElement} */ (document.getElementById('reset'));
   const assets = ['assets/cheeseburger.png', 'assets/fries.png', 'assets/hotdog.png', 'assets/ice-cream.png', 'assets/milkshake.png', 'assets/pizza.png'];
   const images = shuffle([...assets, ...assets]);
   renderBoard(memoryMatchElem, images);
@@ -13,7 +12,7 @@ function initialize() {
 }
 
 /** @param {PointerEvent} e */
-function performAction(e) {
+async function performAction(e) {
   const actionBtn = /** @type {HTMLButtonElement} */ (/** @type {HTMLElement} */ (e.target).closest('.action-btn'));
   if (!(actionBtn instanceof HTMLButtonElement)) return;
   const actionBtns = /** @type {HTMLButtonElement[]} */ (Array.from(document.querySelectorAll('.action-btn')));
@@ -21,10 +20,55 @@ function performAction(e) {
   actionBtn.disabled = true;
   actionBtns.forEach((btn) => (btn.disabled = true));
 
-  const imgSrc = e.target;
+  const imgSrc = /** @type {HTMLImageElement} */ (e.target);
   const imgSrcKey = actionBtn.dataset.key;
 
-  // NOTE Left off here checking whether or not img is flipped accordingly
+  if (actionBtn.dataset.flipped === 'false') {
+    actionBtn.dataset.flipped = 'true';
+    imgSrc.classList.add('rotation');
+    await sleep(500);
+    imgSrc.src = `assets/${imgSrcKey}.png`;
+  } else {
+    actionBtn.dataset.flipped = 'true';
+    imgSrc.classList.remove('rotation');
+    await sleep(500);
+    imgSrc.src = 'assets/blank.png';
+  }
+  await sleep(1000);
+
+  const selectedCards = /** @type {HTMLImageElement[]} */ (actionBtns.filter((c) => c.dataset.flipped === 'true').flatMap((c) => Array.from(c.children)));
+  selectedCards.length === 2 ? await checkForMatch(selectedCards) : actionBtns.forEach((btn) => (btn.disabled = false));
+}
+
+/** @param {HTMLImageElement[]} selectedCards */
+async function checkForMatch(selectedCards) {
+  const [card1, card2] = selectedCards;
+  if (!(card1.parentElement && card2.parentElement)) return;
+
+  if (card1.parentElement.dataset.key === card2.parentElement.dataset.key) {
+    card1.classList.add('match');
+    card2.classList.add('match');
+    await sleep(1000);
+    card1.parentElement.remove();
+    card2.parentElement.remove();
+  } else {
+    card1.classList.add('no-match');
+    card2.classList.add('no-match');
+    await sleep(1000);
+    card1.classList.remove('no-match');
+    card2.classList.remove('no-match');
+    await sleep(300);
+    card1.classList.remove('rotation');
+    card2.classList.remove('rotation');
+    await sleep(500);
+    card1.src = 'assets/blank.png';
+    card2.src = 'assets/blank.png';
+    card1.parentElement.dataset.flipped = 'false';
+    card2.parentElement.dataset.flipped = 'false';
+  }
+
+  const actionBtns = /** @type {HTMLButtonElement[]} */ (Array.from(document.querySelectorAll('.action-btn')));
+  actionBtns.length === 0 ? replay() : actionBtns.forEach((b) => (b.disabled = false));
 }
 
 /**
@@ -46,6 +90,23 @@ function renderBoard(memoryMatchElem, images) {
     btn.appendChild(blankImg);
     memoryMatchElem.appendChild(btn);
   }
+}
+
+function replay() {
+  const memoryMatchElem = /** @type {HTMLElement} */ (document.getElementById('memoryMatch'));
+  const resetBtn = /** @type {HTMLButtonElement} */ (document.getElementById('reset'));
+  resetBtn.disabled = false;
+  resetBtn.style.opacity = '1';
+  resetBtn.addEventListener(
+    'click',
+    () => {
+      resetBtn.disabled = true;
+      resetBtn.style.opacity = '0';
+      memoryMatchElem.removeEventListener('click', performAction);
+      initialize();
+    },
+    {once: true}
+  );
 }
 
 /** @param {string[]} collection */
