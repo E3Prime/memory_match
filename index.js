@@ -1,7 +1,7 @@
-initialize();
-
 /** @param {number} ms */
 const sleep = async (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+initialize();
 
 function initialize() {
   const memoryMatchElem = /** @type {HTMLElement} */ (document.getElementById('memoryMatch'));
@@ -66,7 +66,7 @@ async function checkForMatch(selectedCards) {
     card1.parentElement.dataset.flipped = 'false';
     card2.parentElement.dataset.flipped = 'false';
   }
-
+  await sleep(1000);
   const actionBtns = /** @type {HTMLButtonElement[]} */ (Array.from(document.querySelectorAll('.action-btn')));
   actionBtns.length === 0 ? replay() : actionBtns.forEach((b) => (b.disabled = false));
 }
