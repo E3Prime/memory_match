@@ -1,15 +1,22 @@
 /** @param {number} ms */
 const sleep = async (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-initialize();
+/** @param {string[]} collection */
+const shuffle = (collection) => {
+  for (let i = collection.length - 1; i > 0; --i) {
+    const randomInt = Math.floor(Math.random() * (i + 1));
+    [collection[i], collection[randomInt]] = [collection[randomInt], collection[i]];
+  }
+  return collection;
+};
 
-function initialize() {
-  const memoryMatchElem = /** @type {HTMLElement} */ (document.getElementById('memoryMatch'));
-  const assets = ['assets/cheeseburger.png', 'assets/fries.png', 'assets/hotdog.png', 'assets/ice-cream.png', 'assets/milkshake.png', 'assets/pizza.png'];
-  const images = shuffle([...assets, ...assets]);
-  renderBoard(memoryMatchElem, images);
-  memoryMatchElem.addEventListener('click', performAction);
-}
+const memoryMatchElem = /** @type {HTMLElement} */ (document.getElementById('memoryMatch'));
+const resetBtn = /** @type {HTMLButtonElement} */ (document.getElementById('reset'));
+const images = ['images/cheeseburger.png', 'images/fries.png', 'images/hotdog.png', 'images/ice-cream.png', 'images/milkshake.png', 'images/pizza.png'];
+const shuffledImages = shuffle([...images, ...images]);
+renderBoard();
+memoryMatchElem.addEventListener('click', performAction);
+resetBtn.addEventListener('click', replay);
 
 /** @param {PointerEvent} e */
 async function performAction(e) {
@@ -27,12 +34,12 @@ async function performAction(e) {
     actionBtn.dataset.flipped = 'true';
     imgSrc.classList.add('rotation');
     await sleep(500);
-    imgSrc.src = `assets/${imgSrcKey}.png`;
+    imgSrc.src = `images/${imgSrcKey}.png`;
   } else {
     actionBtn.dataset.flipped = 'true';
     imgSrc.classList.remove('rotation');
     await sleep(500);
-    imgSrc.src = 'assets/blank.png';
+    imgSrc.src = 'images/blank.png';
   }
   await sleep(1000);
 
@@ -61,27 +68,25 @@ async function checkForMatch(selectedCards) {
     card1.classList.remove('rotation');
     card2.classList.remove('rotation');
     await sleep(500);
-    card1.src = 'assets/blank.png';
-    card2.src = 'assets/blank.png';
+    card1.src = 'images/blank.png';
+    card2.src = 'images/blank.png';
     card1.parentElement.dataset.flipped = 'false';
     card2.parentElement.dataset.flipped = 'false';
   }
   await sleep(1000);
   const actionBtns = /** @type {HTMLButtonElement[]} */ (Array.from(document.querySelectorAll('.action-btn')));
-  actionBtns.length === 0 ? replay() : actionBtns.forEach((b) => (b.disabled = false));
+  actionBtns.length === 0 ? renderReplayBtn() : actionBtns.forEach((b) => (b.disabled = false));
 }
 
-/**
- * @param {HTMLElement} memoryMatchElem
- * @param {string[]} images
- * */
-function renderBoard(memoryMatchElem, images) {
-  for (const img of images) {
+function renderBoard() {
+  resetBtn.setAttribute('hidden', '');
+  resetBtn.disabled = true;
+  for (const img of shuffledImages) {
     const blankImg = document.createElement('img');
     const btn = document.createElement('button');
     const imgName = img.slice(7, -4);
 
-    blankImg.src = 'assets/blank.png';
+    blankImg.src = 'images/blank.png';
     blankImg.alt = 'Mystery image';
     btn.type = 'button';
     btn.classList.add('action-btn');
@@ -92,28 +97,15 @@ function renderBoard(memoryMatchElem, images) {
   }
 }
 
-function replay() {
-  const memoryMatchElem = /** @type {HTMLElement} */ (document.getElementById('memoryMatch'));
-  const resetBtn = /** @type {HTMLButtonElement} */ (document.getElementById('reset'));
-  resetBtn.disabled = false;
-  resetBtn.style.opacity = '1';
-  resetBtn.addEventListener(
-    'click',
-    () => {
-      resetBtn.disabled = true;
-      resetBtn.style.opacity = '0';
-      memoryMatchElem.removeEventListener('click', performAction);
-      initialize();
-    },
-    {once: true}
-  );
+async function replay() {
+  resetBtn.style.opacity = '0';
+  await sleep(1000);
+  renderBoard();
 }
 
-/** @param {string[]} collection */
-function shuffle(collection) {
-  for (let i = collection.length - 1; i > 0; --i) {
-    const randomInt = Math.floor(Math.random() * (i + 1));
-    [collection[i], collection[randomInt]] = [collection[randomInt], collection[i]];
-  }
-  return collection;
+async function renderReplayBtn() {
+  resetBtn.removeAttribute('hidden');
+  resetBtn.disabled = false;
+  await sleep(1000);
+  resetBtn.style.opacity = '1';
 }
