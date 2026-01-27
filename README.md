@@ -8,7 +8,7 @@ A browser-based interactive card matching game designed to test memory and conce
 
 ## 🔗 Links
 
-- **Live Demo Link:**
+- **Live Demo Link:** https://e3prime.github.io/memory_match
 
 ## 🎮 Gameplay Showcase
 
